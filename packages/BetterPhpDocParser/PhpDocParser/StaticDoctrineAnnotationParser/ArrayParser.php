@@ -87,7 +87,6 @@ final class ArrayParser
             return [$key, $this->plainValueParser->parseValue($tokenIterator)];
         }
 
-
         return [null, $this->plainValueParser->parseValue($tokenIterator)];
     }
 
