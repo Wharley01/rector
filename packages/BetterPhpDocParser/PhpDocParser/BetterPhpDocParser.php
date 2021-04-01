@@ -24,11 +24,9 @@ use Rector\BetterPhpDocParser\Contract\PhpDocParserAwareInterface;
 use Rector\BetterPhpDocParser\Contract\SpecificPhpDocNodeFactoryInterface;
 use Rector\BetterPhpDocParser\Contract\StringTagMatchingPhpDocNodeFactoryInterface;
 use Rector\BetterPhpDocParser\PhpDoc\DoctrineAnnotationTagValueNode;
-use Rector\BetterPhpDocParser\PhpDoc\EmptyPhpDocNode;
 use Rector\BetterPhpDocParser\PhpDocInfo\TokenIteratorFactory;
 use Rector\BetterPhpDocParser\PhpDocNodeMapper;
 use Rector\BetterPhpDocParser\ValueObject\DoctrineAnnotation\SilentKeyMap;
-use Rector\BetterPhpDocParser\ValueObject\Parser\BetterTokenIterator;
 use Rector\BetterPhpDocParser\ValueObject\StartAndEnd;
 use Rector\Core\Configuration\CurrentNodeProvider;
 use Rector\Core\Exception\ShouldNotHappenException;
@@ -40,24 +38,6 @@ use Symplify\PackageBuilder\Reflection\PrivatesCaller;
  */
 final class BetterPhpDocParser extends PhpDocParser
 {
-//    /**
-//     * @var string
-//     * @see https://regex101.com/r/HlGzME/1
-//     */
-//    private const SIMPLE_TAG_REGEX = '#@(var|param|return|throws|property|deprecated|var|param|template|extends|implements|use|return|throws|mixin|property|method|phpstan)#';
-
-//    /**
-//     * @var array<string, string>
-//     */
-//    private const TAGS_TO_ANNOTATION_CLASSES = [
-//        'Inject' => 'DI\Annotation\Inject',
-//    ];
-
-//    /**
-//     * @var PhpDocNodeFactoryInterface[]
-//     */
-//    private $phpDocNodeFactories = [];
-
     /**
      * @var PrivatesCaller
      */
@@ -220,10 +200,6 @@ final class BetterPhpDocParser extends PhpDocParser
         }
 
         // process generic doctrine annotations
-
-        dump($tagValueNode);
-        die;
-
         $currentPhpNode = $this->currentNodeProvider->getNode();
         if (! $currentPhpNode instanceof PhpParserNode) {
             throw new ShouldNotHappenException();
@@ -239,22 +215,19 @@ final class BetterPhpDocParser extends PhpDocParser
         );
 
         // join tokeniterator with all the following nodes if nested
-        $nestedTokenIterator = $this->tokenIteratorFactory->create($phpDocTagValueNode->value);
+        $nestedTokenIterator = $this->tokenIteratorFactory->create($tagValueNode->value);
 
         // probably nested doctrine entity
-        $nestedTokenIterator = $this->correctNestedDoctrineAnnotations($nestedTokenIterator);
         $values = $this->staticDoctrineAnnotationParser->resolveAnnotationMethodCall($nestedTokenIterator);
 
-                // https://github.com/doctrine/annotations/blob/c66f06b7c83e9a2a7523351a9d5a4b55f885e574/lib/Doctrine/Common/Annotations/DocParser.php#L742
-                // @todo mimic this behavior in phpdoc-parser :)
-                $tagValueNode = new DoctrineAnnotationTagValueNode(
-                    $fullyQualifiedAnnotationClass,
-                    $phpDocTagValueNode->value,
-                    $values,
-                    SilentKeyMap::CLASS_NAMES_TO_SILENT_KEYS[$fullyQualifiedAnnotationClass] ?? null
-                );
-//            }
-//        }
+        // https://github.com/doctrine/annotations/blob/c66f06b7c83e9a2a7523351a9d5a4b55f885e574/lib/Doctrine/Common/Annotations/DocParser.php#L742
+        // @todo mimic this behavior in phpdoc-parser :)
+        $tagValueNode = new DoctrineAnnotationTagValueNode(
+            $fullyQualifiedAnnotationClass,
+            $phpDocTagValueNode->value,
+            $values,
+            SilentKeyMap::CLASS_NAMES_TO_SILENT_KEYS[$fullyQualifiedAnnotationClass] ?? null
+        );
 
         $originalTokenIterator = clone $tokenIterator;
         $docContent = $this->annotationContentResolver->resolveFromTokenIterator($originalTokenIterator);
