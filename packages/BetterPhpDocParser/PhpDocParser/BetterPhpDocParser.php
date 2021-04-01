@@ -349,6 +349,7 @@ final class BetterPhpDocParser extends PhpDocParser
     }
 
     /**
+     * @deprecated
      * @return string[]
      */
     private function resolvePhpDocNodeFactoryClasses(PhpDocNodeFactoryInterface $phpDocNodeFactory): array
