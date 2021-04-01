@@ -24,6 +24,7 @@ use Rector\BetterPhpDocParser\Contract\PhpDocParserAwareInterface;
 use Rector\BetterPhpDocParser\Contract\SpecificPhpDocNodeFactoryInterface;
 use Rector\BetterPhpDocParser\Contract\StringTagMatchingPhpDocNodeFactoryInterface;
 use Rector\BetterPhpDocParser\PhpDoc\DoctrineAnnotationTagValueNode;
+use Rector\BetterPhpDocParser\PhpDoc\EmptyPhpDocNode;
 use Rector\BetterPhpDocParser\PhpDocInfo\TokenIteratorFactory;
 use Rector\BetterPhpDocParser\PhpDocNodeMapper;
 use Rector\BetterPhpDocParser\ValueObject\DoctrineAnnotation\SilentKeyMap;
@@ -39,23 +40,23 @@ use Symplify\PackageBuilder\Reflection\PrivatesCaller;
  */
 final class BetterPhpDocParser extends PhpDocParser
 {
-    /**
-     * @var string
-     * @see https://regex101.com/r/HlGzME/1
-     */
-    private const SIMPLE_TAG_REGEX = '#@(var|param|return|throws|property|deprecated|var|param|template|extends|implements|use|return|throws|mixin|property|method|phpstan)#';
+//    /**
+//     * @var string
+//     * @see https://regex101.com/r/HlGzME/1
+//     */
+//    private const SIMPLE_TAG_REGEX = '#@(var|param|return|throws|property|deprecated|var|param|template|extends|implements|use|return|throws|mixin|property|method|phpstan)#';
 
-    /**
-     * @var array<string, string>
-     */
-    private const TAGS_TO_ANNOTATION_CLASSES = [
-        'Inject' => 'DI\Annotation\Inject',
-    ];
+//    /**
+//     * @var array<string, string>
+//     */
+//    private const TAGS_TO_ANNOTATION_CLASSES = [
+//        'Inject' => 'DI\Annotation\Inject',
+//    ];
 
-    /**
-     * @var PhpDocNodeFactoryInterface[]
-     */
-    private $phpDocNodeFactories = [];
+//    /**
+//     * @var PhpDocNodeFactoryInterface[]
+//     */
+//    private $phpDocNodeFactories = [];
 
     /**
      * @var PrivatesCaller
@@ -102,25 +103,25 @@ final class BetterPhpDocParser extends PhpDocParser
      */
     private $tokenIteratorFactory;
 
-    /**
-     * @var bool
-     */
-    private $isDummyNodes = false;
-
-    /**
-     * @var PhpDocTagNode[]
-     */
-    private $dummyNodes = [];
-
-    /**
-     * @var int
-     */
-    private $currentPhpDocTagNodePosition = 0;
-
-    /**
-     * @var int[]
-     */
-    private $mergedPhpDocTagNodePositions = [];
+//    /**
+//     * @var bool
+//     */
+//    private $isDummyNodes = false;
+//
+//    /**
+//     * @var PhpDocTagNode[]
+//     */
+//    private $dummyNodes = [];
+//
+//    /**
+//     * @var int
+//     */
+//    private $currentPhpDocTagNodePosition = 0;
+//
+//    /**
+//     * @var string[]
+//     */
+//    private $mergedPhpDocContents = [];
 
     /**
      * @param PhpDocNodeFactoryInterface[] $phpDocNodeFactories
@@ -135,12 +136,13 @@ final class BetterPhpDocParser extends PhpDocParser
         AnnotationContentResolver $annotationContentResolver,
         StaticDoctrineAnnotationParser $staticDoctrineAnnotationParser,
         TokenIteratorFactory $tokenIteratorFactory,
-        array $phpDocNodeFactories = [],
+//        ,
+//        array $phpDocNodeFactories = [],
         array $stringTagMatchingPhpDocNodeFactories = []
     ) {
         parent::__construct($typeParser, $constExprParser);
 
-        $this->setPhpDocNodeFactories($phpDocNodeFactories);
+//        $this->setPhpDocNodeFactories($phpDocNodeFactories);
 
         $this->privatesCaller = new PrivatesCaller();
         $this->privatesAccessor = new PrivatesAccessor();
@@ -155,14 +157,16 @@ final class BetterPhpDocParser extends PhpDocParser
 
     public function parse(TokenIterator $tokenIterator): PhpDocNode
     {
-        $this->currentPhpDocTagNodePosition = 0;
-
-        $this->isDummyNodes = true;
-        $dummyTokenIterator = clone $tokenIterator;
-        $phpDocNode = parent::parse($dummyTokenIterator);
-        $this->dummyNodes = $phpDocNode->children;
-        $this->isDummyNodes = false;
-
+//        $this->currentPhpDocTagNodePosition = 0;
+//
+//        $this->isDummyNodes = true;
+//        $dummyTokenIterator = clone $tokenIterator;
+//        $phpDocNode = parent::parse($dummyTokenIterator);
+//        $this->dummyNodes = $phpDocNode->children;
+//        $this->isDummyNodes = false;
+//
+//        $this->mergedPhpDocContents = [];
+////
         $originalTokenIterator = clone $tokenIterator;
 
         $tokenIterator->consumeTokenType(Lexer::TOKEN_OPEN_PHPDOC);
@@ -207,9 +211,18 @@ final class BetterPhpDocParser extends PhpDocParser
 
     public function parseTagValue(TokenIterator $tokenIterator, string $tag): PhpDocTagValueNode
     {
-        if ($this->isDummyNodes === true) {
-            return parent::parseTagValue($tokenIterator, $tag);
+        $betterTokenIterator = $this->tokenIteratorFactory->createFromTokenIterator($tokenIterator);
+
+        $tagValueNode = parent::parseTagValue($tokenIterator, $tag);
+        if (! $tagValueNode instanceof GenericTagValueNode) {
+            $phpDocContent = $betterTokenIterator->print();
+            return $this->phpDocNodeMapper->transform($tagValueNode, $phpDocContent);
         }
+
+        // process generic doctrine annotations
+
+        dump($tagValueNode);
+        die;
 
         $currentPhpNode = $this->currentNodeProvider->getNode();
         if (! $currentPhpNode instanceof PhpParserNode) {
@@ -217,31 +230,20 @@ final class BetterPhpDocParser extends PhpDocParser
         }
 
         $tagValueNode = null;
+        $tag = ltrim($tag, '@');
 
-        if (! $this->isBasicTag($tag)) {
-            // class-annotation
-            $phpDocNodeFactory = $this->matchTagToPhpDocNodeFactory($tag);
+        // known doc tag to annotation class
+        $fullyQualifiedAnnotationClass = $this->classAnnotationMatcher->resolveTagFullyQualifiedName(
+            $tag,
+            $currentPhpNode
+        );
 
-            $tag = ltrim($tag, '@');
+        // join tokeniterator with all the following nodes if nested
+        $nestedTokenIterator = $this->tokenIteratorFactory->create($phpDocTagValueNode->value);
 
-            // known doc tag to annotation class
-            if ($phpDocNodeFactory !== null || isset(self::TAGS_TO_ANNOTATION_CLASSES[$tag])) {
-                $fullyQualifiedAnnotationClass = $this->classAnnotationMatcher->resolveTagFullyQualifiedName(
-                    $tag,
-                    $currentPhpNode
-                );
-
-                $phpDocTagValueNode = parent::parseTagValue($tokenIterator, $tag);
-                if (! $phpDocTagValueNode instanceof GenericTagValueNode) {
-                    throw new ShouldNotHappenException();
-                }
-
-                // join tokeniterator with all the following nodes if nested
-                $nestedTokenIterator = $this->tokenIteratorFactory->create($phpDocTagValueNode->value);
-
-                // probably nested doctrine entity
-                $nestedTokenIterator = $this->correctNestedDoctrineAnnotations($nestedTokenIterator);
-                $values = $this->staticDoctrineAnnotationParser->resolveAnnotationMethodCall($nestedTokenIterator);
+        // probably nested doctrine entity
+        $nestedTokenIterator = $this->correctNestedDoctrineAnnotations($nestedTokenIterator);
+        $values = $this->staticDoctrineAnnotationParser->resolveAnnotationMethodCall($nestedTokenIterator);
 
                 // https://github.com/doctrine/annotations/blob/c66f06b7c83e9a2a7523351a9d5a4b55f885e574/lib/Doctrine/Common/Annotations/DocParser.php#L742
                 // @todo mimic this behavior in phpdoc-parser :)
@@ -251,8 +253,8 @@ final class BetterPhpDocParser extends PhpDocParser
                     $values,
                     SilentKeyMap::CLASS_NAMES_TO_SILENT_KEYS[$fullyQualifiedAnnotationClass] ?? null
                 );
-            }
-        }
+//            }
+//        }
 
         $originalTokenIterator = clone $tokenIterator;
         $docContent = $this->annotationContentResolver->resolveFromTokenIterator($originalTokenIterator);
@@ -262,23 +264,23 @@ final class BetterPhpDocParser extends PhpDocParser
             $tagValueNode = parent::parseTagValue($tokenIterator, $tag);
         }
 
-        ++$this->currentPhpDocTagNodePosition;
+//        ++$this->currentPhpDocTagNodePosition;
 
         return $this->phpDocNodeMapper->transform($tagValueNode, $docContent);
     }
 
-    /**
-     * @param PhpDocNodeFactoryInterface[] $phpDocNodeFactories
-     */
-    private function setPhpDocNodeFactories(array $phpDocNodeFactories): void
-    {
-        foreach ($phpDocNodeFactories as $phpDocNodeFactory) {
-            $classes = $this->resolvePhpDocNodeFactoryClasses($phpDocNodeFactory);
-            foreach ($classes as $class) {
-                $this->phpDocNodeFactories[$class] = $phpDocNodeFactory;
-            }
-        }
-    }
+//    /**
+//     * @param PhpDocNodeFactoryInterface[] $phpDocNodeFactories
+//     */
+//    private function setPhpDocNodeFactories(array $phpDocNodeFactories): void
+//    {
+//        foreach ($phpDocNodeFactories as $phpDocNodeFactory) {
+//            $classes = $this->resolvePhpDocNodeFactoryClasses($phpDocNodeFactory);
+//            foreach ($classes as $class) {
+//                $this->phpDocNodeFactories[$class] = $phpDocNodeFactory;
+//            }
+//        }
+//    }
 
     private function parseChildAndStoreItsPositions(TokenIterator $tokenIterator): PhpDocChildNode
     {
@@ -289,7 +291,6 @@ final class BetterPhpDocParser extends PhpDocParser
 
         /** @var PhpDocChildNode $phpDocNode */
         $phpDocNode = $this->privatesCaller->callPrivateMethod($this, 'parseChild', [$tokenIterator]);
-
         $tokenEnd = $this->resolveTokenEnd($tokenIterator);
 
         $startAndEnd = new StartAndEnd($tokenStart, $tokenEnd);
@@ -307,9 +308,9 @@ final class BetterPhpDocParser extends PhpDocParser
         $tokenIterator->next();
 
         // basic annotation
-        if (Strings::match($tag, self::SIMPLE_TAG_REGEX)) {
-            return $tag;
-        }
+//        if (Strings::match($tag, self::SIMPLE_TAG_REGEX)) {
+//            return $tag;
+//        }
 
         // is not e.g "@var "
         // join tags like "@ORM\Column" etc.
@@ -418,44 +419,5 @@ final class BetterPhpDocParser extends PhpDocParser
         }
 
         return null;
-    }
-
-    private function isBasicTag(string $tag): bool
-    {
-        $tag = '@' . ltrim($tag, '@');
-        return (bool) Strings::match($tag, self::SIMPLE_TAG_REGEX);
-    }
-
-    private function createBetterTokenIterator(TokenIterator $tokenIterator): BetterTokenIterator
-    {
-        if ($tokenIterator instanceof BetterTokenIterator) {
-            return $tokenIterator;
-        }
-
-        $tokens = $this->privatesAccessor->getPrivateProperty($tokenIterator, 'tokens');
-        return new BetterTokenIterator($tokens);
-    }
-
-    private function correctNestedDoctrineAnnotations(BetterTokenIterator $betterTokenIterator): BetterTokenIterator
-    {
-        if (! $betterTokenIterator->endsWithType(Lexer::TOKEN_END)) {
-            return $betterTokenIterator;
-        }
-
-        // join with previous phpdoc node content
-        $nextPhpDocTagNodePosition = $this->currentPhpDocTagNodePosition + 1;
-        $nextPhpDocTagNOde = $this->dummyNodes[$nextPhpDocTagNodePosition] ?? null;
-        if (! $nextPhpDocTagNOde instanceof PhpDocTagNode) {
-            return $betterTokenIterator;
-        }
-
-        if (! $nextPhpDocTagNOde->value instanceof GenericTagValueNode) {
-            return $betterTokenIterator;
-        }
-
-        $this->mergedPhpDocTagNodePositions = [$nextPhpDocTagNodePosition];
-
-        $nextNodeContent = $nextPhpDocTagNOde->name . $nextPhpDocTagNOde->value->value;
-        return $this->tokenIteratorFactory->create($betterTokenIterator->print() . $nextNodeContent);
     }
 }
