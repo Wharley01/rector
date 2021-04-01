@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Rector\BetterPhpDocParser\PhpDocParser;
 
-use Nette\Utils\Strings;
 use PhpParser\Node as PhpParserNode;
 use PHPStan\PhpDocParser\Ast\Node;
 use PHPStan\PhpDocParser\Ast\PhpDoc\GenericTagValueNode;
