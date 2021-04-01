@@ -118,6 +118,11 @@ final class BetterPhpDocParser extends PhpDocParser
     private $currentPhpDocTagNodePosition = 0;
 
     /**
+     * @var int[]
+     */
+    private $mergedPhpDocTagNodePositions = [];
+
+    /**
      * @param PhpDocNodeFactoryInterface[] $phpDocNodeFactories
      * @param StringTagMatchingPhpDocNodeFactoryInterface[] $stringTagMatchingPhpDocNodeFactories
      */
@@ -197,7 +202,6 @@ final class BetterPhpDocParser extends PhpDocParser
         }
 
         $phpDocTagValueNode = $this->parseTagValue($tokenIterator, $tag);
-
         return new PhpDocTagNode($tag, $phpDocTagValueNode);
     }
 
@@ -326,6 +330,9 @@ final class BetterPhpDocParser extends PhpDocParser
         return $tag;
     }
 
+    /**
+     * @deprecated Everything here is doctrine annotation
+     */
     private function matchTagToPhpDocNodeFactory(string $tag): ?PhpDocNodeFactoryInterface
     {
         $currentPhpNode = $this->currentNodeProvider->getNode();
@@ -444,6 +451,8 @@ final class BetterPhpDocParser extends PhpDocParser
         if (! $nextPhpDocTagNOde->value instanceof GenericTagValueNode) {
             return $betterTokenIterator;
         }
+
+        $this->mergedPhpDocTagNodePositions = [$nextPhpDocTagNodePosition];
 
         $nextNodeContent = $nextPhpDocTagNOde->name . $nextPhpDocTagNOde->value->value;
         return $this->tokenIteratorFactory->create($betterTokenIterator->print() . $nextNodeContent);
