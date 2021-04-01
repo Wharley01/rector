@@ -46,7 +46,7 @@ final class BetterPhpDocParser extends PhpDocParser
     private const SIMPLE_TAG_REGEX = '#@(var|param|return|throws|property|deprecated|var|param|template|extends|implements|use|return|throws|mixin|property|method|phpstan)#';
 
     /**
-     * @var array<string, class-string>
+     * @var array<string, string>
      */
     private const TAGS_TO_ANNOTATION_CLASSES = [
         'Inject' => 'DI\Annotation\Inject',
