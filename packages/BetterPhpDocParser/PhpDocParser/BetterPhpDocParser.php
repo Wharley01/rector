@@ -204,6 +204,7 @@ final class BetterPhpDocParser extends PhpDocParser
             throw new ShouldNotHappenException();
         }
 
+        $tag = $this->resolveTag($tokenIterator);
         $tag = ltrim($tag, '@');
 
         // known doc tag to annotation class
@@ -211,6 +212,8 @@ final class BetterPhpDocParser extends PhpDocParser
             $tag,
             $currentPhpNode
         );
+
+        $tag = $this->resolveTag($tokenIterator);
 
         // join tokeniterator with all the following nodes if nested
         $nestedTokenIterator = $this->tokenIteratorFactory->create($tagValueNode->value);
@@ -264,23 +267,24 @@ final class BetterPhpDocParser extends PhpDocParser
         $tokenIterator->next();
 
         // basic annotation
-//        if (Strings::match($tag, self::SIMPLE_TAG_REGEX)) {
-//            return $tag;
-//        }
 
         // is not e.g "@var "
         // join tags like "@ORM\Column" etc.
         if ($tokenIterator->currentTokenType() !== Lexer::TOKEN_IDENTIFIER) {
             return $tag;
         }
-        $oldTag = $tag;
 
+//        $oldTag = $tag;
+
+
+        // @todo use joinUntil("(")
         $tag .= $tokenIterator->currentTokenValue();
 
-        $isTagMatchedByFactories = (bool) $this->matchTagToPhpDocNodeFactory($tag);
-        if (! $isTagMatchedByFactories) {
-            return $oldTag;
-        }
+//        $isTagMatchedByFactories = (bool) $this->matchTagToPhpDocNodeFactory($tag);
+//        if (! $isTagMatchedByFactories) {
+//            return $oldTag;
+//        }
+
 
         $tokenIterator->next();
 
