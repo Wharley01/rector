@@ -104,7 +104,6 @@ final class BetterPhpDocParser extends PhpDocParser
 //    private $mergedPhpDocContents = [];
 
     /**
-     * @param PhpDocNodeFactoryInterface[] $phpDocNodeFactories
      * @param StringTagMatchingPhpDocNodeFactoryInterface[] $stringTagMatchingPhpDocNodeFactories
      */
     public function __construct(
@@ -146,7 +145,7 @@ final class BetterPhpDocParser extends PhpDocParser
 //        $this->isDummyNodes = false;
 //
 //        $this->mergedPhpDocContents = [];
-////
+        ////
         $originalTokenIterator = clone $tokenIterator;
 
         $tokenIterator->consumeTokenType(Lexer::TOKEN_OPEN_PHPDOC);
@@ -243,7 +242,7 @@ final class BetterPhpDocParser extends PhpDocParser
     }
 
 //    /**
-//     * @param PhpDocNodeFactoryInterface[] $phpDocNodeFactories
+//     * @param PhpDocNodeFactoryInterface[] $tokenIterator
 //     */
 //    private function setPhpDocNodeFactories(array $phpDocNodeFactories): void
 //    {
