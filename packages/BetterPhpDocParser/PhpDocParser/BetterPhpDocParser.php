@@ -204,7 +204,6 @@ final class BetterPhpDocParser extends PhpDocParser
             throw new ShouldNotHappenException();
         }
 
-        $tagValueNode = null;
         $tag = ltrim($tag, '@');
 
         // known doc tag to annotation class
@@ -223,7 +222,7 @@ final class BetterPhpDocParser extends PhpDocParser
         // @todo mimic this behavior in phpdoc-parser :)
         $tagValueNode = new DoctrineAnnotationTagValueNode(
             $fullyQualifiedAnnotationClass,
-            $phpDocTagValueNode->value,
+            $tagValueNode->value,
             $values,
             SilentKeyMap::CLASS_NAMES_TO_SILENT_KEYS[$fullyQualifiedAnnotationClass] ?? null
         );
@@ -236,23 +235,8 @@ final class BetterPhpDocParser extends PhpDocParser
             $tagValueNode = parent::parseTagValue($tokenIterator, $tag);
         }
 
-//        ++$this->currentPhpDocTagNodePosition;
-
         return $this->phpDocNodeMapper->transform($tagValueNode, $docContent);
     }
-
-//    /**
-//     * @param PhpDocNodeFactoryInterface[] $tokenIterator
-//     */
-//    private function setPhpDocNodeFactories(array $phpDocNodeFactories): void
-//    {
-//        foreach ($phpDocNodeFactories as $phpDocNodeFactory) {
-//            $classes = $this->resolvePhpDocNodeFactoryClasses($phpDocNodeFactory);
-//            foreach ($classes as $class) {
-//                $this->phpDocNodeFactories[$class] = $phpDocNodeFactory;
-//            }
-//        }
-//    }
 
     private function parseChildAndStoreItsPositions(TokenIterator $tokenIterator): PhpDocChildNode
     {
