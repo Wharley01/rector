@@ -55,7 +55,9 @@ final class ArrayParser
             $tokenIterator->tryConsumeTokenType(Lexer::TOKEN_PHPDOC_EOL);
         }
 
+        $tokenIterator->tryConsumeTokenType(Lexer::TOKEN_PHPDOC_EOL);
         $tokenIterator->consumeTokenType(Lexer::TOKEN_CLOSE_CURLY_BRACKET);
+
         return $this->createArrayFromValues($values);
     }
 
@@ -84,6 +86,7 @@ final class ArrayParser
 
             return [$key, $this->plainValueParser->parseValue($tokenIterator)];
         }
+
 
         return [null, $this->plainValueParser->parseValue($tokenIterator)];
     }

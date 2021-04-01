@@ -93,6 +93,9 @@ final class PlainValueParser
                 $this->currentNodeProvider->getNode()
             );
 
+            // keep the last ")"
+            $tokenIterator->consumeTokenType(Lexer::TOKEN_CLOSE_PARENTHESES);
+
             return new DoctrineAnnotationTagValueNode($fullyQualifiedAnnotationClass, $annotationShortName, $values);
         }
 
