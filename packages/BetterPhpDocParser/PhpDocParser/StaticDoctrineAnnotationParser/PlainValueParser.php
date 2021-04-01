@@ -20,6 +20,7 @@ final class PlainValueParser
      * @var StaticDoctrineAnnotationParser
      */
     private $staticDoctrineAnnotationParser;
+
     /**
      * @var ClassAnnotationMatcher
      */

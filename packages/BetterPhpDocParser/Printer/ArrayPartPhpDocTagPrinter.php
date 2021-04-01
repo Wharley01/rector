@@ -10,5 +10,4 @@ namespace Rector\BetterPhpDocParser\Printer;
  */
 final class ArrayPartPhpDocTagPrinter
 {
-
 }
